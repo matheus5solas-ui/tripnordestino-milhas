@@ -23,6 +23,7 @@ type AviasalesOffer = {
   flight_number?: string | number;
   transfers?: number;
   return_transfers?: number;
+  found_at?: string;
   link?: string;
 };
 
@@ -61,6 +62,7 @@ function toOffer(item: AviasalesOffer, requestedOrigin: string): FlightOffer | n
     returnTransfers: item.return_transfers,
     departureAt: item.departure_at,
     returnAt: item.return_at,
+    foundAt: item.found_at,
     bookingUrl
   };
 }
