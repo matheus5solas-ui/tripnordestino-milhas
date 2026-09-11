@@ -3,7 +3,7 @@
 import { CalendarDays, Heart, Plane } from "lucide-react";
 import { useState } from "react";
 import type { FlightOffer } from "@/types/travel";
-import { getAirlineSite } from "@/data/airline-sites";
+import { getAirlineBookingUrl, getAirlineSite } from "@/data/airline-sites";
 
 const money = new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL", maximumFractionDigits:0 });
 const number = new Intl.NumberFormat("pt-BR");
@@ -18,6 +18,15 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
   const [favorite, setFavorite] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const airlineSite = getAirlineSite(offer.airlineCode, offer.airlineName);
+  const origin = offer.originAirport ?? offer.route.split(" → ")[0]?.trim();
+  const bookingUrl = getAirlineBookingUrl(offer.airlineCode, {
+    origin,
+    destination: offer.airport,
+    departureAt: offer.departureAt,
+    returnAt: offer.returnAt,
+    passengers: 1,
+  });
+
   return (
     <article className={`offer-card ${expanded ? "expanded" : ""}`}>
       <button type="button" className={`destination-art ${offer.theme}`} onClick={() => setExpanded(!expanded)} aria-label={`Ver detalhes de ${offer.destination}`}>
@@ -34,12 +43,12 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
         {expanded && <div className="flight-details">
           <div><span>Companhia</span><strong>{offer.airlineName ?? "Não informada pela fonte"}{offer.airlineCode ? ` (${offer.airlineCode})` : ""}</strong></div>
           <div><span>Voo</span><strong>{offer.flightNumber ? `${offer.airlineCode ?? ""} ${offer.flightNumber}`.trim() : "Não informado"}</strong></div>
-          <div><span>Aeroportos</span><strong>{offer.originAirport ?? offer.route.split(" → ")[0]} → {offer.airport}</strong></div>
+          <div><span>Aeroportos</span><strong>{origin} → {offer.airport}</strong></div>
           <div><span>Ida</span><strong>{stops(offer.transfers)}</strong></div>
           <div><span>Volta</span><strong>{stops(offer.returnTransfers)}</strong></div>
-          {airlineSite?.url ? <>
-            <a className="booking-link" href={airlineSite.url} target="_blank" rel="noopener noreferrer">Buscar este voo na {airlineSite.name} →</a>
-            <span className="booking-unavailable">O preço foi encontrado recentemente. Confirme datas, voo e valor diretamente no site da companhia.</span>
+          {airlineSite?.url && bookingUrl ? <>
+            <a className="booking-link" href={bookingUrl} target="_blank" rel="noopener noreferrer">Buscar este voo na {airlineSite.name} →</a>
+            <span className="booking-unavailable">Abrimos a busca da companhia com rota e datas quando o site oficial permite. Confirme o voo e o valor antes de comprar.</span>
           </> : offer.bookingUrl ? <a className="booking-link" href={offer.bookingUrl} target="_blank" rel="noopener noreferrer">Comparar disponibilidade →</a> : <span className="booking-unavailable">Site oficial da companhia ainda não mapeado para esta oferta.</span>}
         </div>}
       </div>
