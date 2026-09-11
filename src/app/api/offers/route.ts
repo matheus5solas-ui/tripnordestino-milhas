@@ -8,7 +8,7 @@ const DESTINATION_NAMES: Record<string, string> = {
 };
 
 const AIRLINES: Record<string, string> = {
-  AD:"Azul Linhas Aéreas",G3:"GOL Linhas Aéreas",LA:"LATAM Airlines",2Z:"VOEPASS",TP:"TAP Air Portugal",IB:"Iberia",UX:"Air Europa",AR:"Aerolíneas Argentinas",AV:"Avianca",CM:"Copa Airlines",AA:"American Airlines",DL:"Delta Air Lines",UA:"United Airlines",AF:"Air France",KL:"KLM",LH:"Lufthansa",AZ:"ITA Airways",BA:"British Airways"
+  AD:"Azul Linhas Aéreas",G3:"GOL Linhas Aéreas",LA:"LATAM Airlines","2Z":"VOEPASS",TP:"TAP Air Portugal",IB:"Iberia",UX:"Air Europa",AR:"Aerolíneas Argentinas",AV:"Avianca",CM:"Copa Airlines",AA:"American Airlines",DL:"Delta Air Lines",UA:"United Airlines",AF:"Air France",KL:"KLM",LH:"Lufthansa",AZ:"ITA Airways",BA:"British Airways"
 };
 
 type AviasalesOffer = {
@@ -52,7 +52,7 @@ function toOffer(item: AviasalesOffer, requestedOrigin: string): FlightOffer | n
     dates: formatDateRange(item.departure_at, item.return_at),
     cashPrice: item.price,
     tag:"Oferta",
-    region: BRAZIL_IATA.has(code) ? "Brasil" : "Internacional" as OfferRegion,
+    region: (BRAZIL_IATA.has(code) ? "Brasil" : "Internacional") as OfferRegion,
     theme:"generic",
     airlineCode,
     airlineName: airlineCode ? (AIRLINES[airlineCode] ?? airlineCode) : undefined,
