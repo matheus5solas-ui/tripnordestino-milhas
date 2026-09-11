@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Heart, Menu, Plane, Search, Tag, X } from "lucide-react";
+import { Bell, Heart, Menu, Plane, Search, Tag, X, Youtube } from "lucide-react";
 import { useState } from "react";
 
 const links = [
   { label: "Buscar voos", href: "/#buscar", icon: Search },
   { label: "Ofertas", href: "/#ofertas", icon: Tag },
   { label: "Milhas", href: "/milhas", icon: Tag },
+  { label: "YouTube", href: "/youtube", icon: Youtube },
   { label: "Alertas", href: "/#alertas", icon: Bell },
   { label: "Favoritos", href: "/#favoritos", icon: Heart },
 ];
