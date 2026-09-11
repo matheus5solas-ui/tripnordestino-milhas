@@ -29,12 +29,12 @@ export function AlertSection() {
       <div className="alert-copy">
         <span className="alert-icon"><Bell size={25}/></span><span className="eyebrow">NÃO PERCA A OPORTUNIDADE</span>
         <h2>Defina seu preço.<br/>A gente monitora.</h2>
-        <p>Cadastre seu WhatsApp e diga quanto quer pagar. Estamos testando esta funcionalidade antes de liberar os avisos automáticos para todos.</p>
+        <p>Em breve você poderá cadastrar seu WhatsApp e definir quanto quer pagar para receber oportunidades automaticamente.</p>
         <div className="example"><Sparkles size={18}/><span><small>SEU ALERTA</small>“{example}”</span></div>
       </div>
       <form className="alert-form" onSubmit={submit}>
-        <div style={{display:"inline-flex", alignItems:"center", gap:7, padding:"7px 11px", marginBottom:12, borderRadius:999, background:"#fff3cd", color:"#7a5700", fontSize:12, fontWeight:800, letterSpacing:".04em"}}>● FUNÇÃO AINDA EM TESTES</div>
-        <h3>Crie seu alerta</h3><p>Você já pode visualizar como a função vai funcionar.</p>
+        <div style={{display:"inline-flex", alignItems:"center", gap:7, padding:"7px 11px", marginBottom:12, borderRadius:999, background:"#fff3cd", color:"#7a5700", fontSize:12, fontWeight:800, letterSpacing:".04em"}}>● FUNÇÃO AINDA NÃO HABILITADA</div>
+        <h3>Crie seu alerta</h3><p>Veja como os alertas funcionarão quando forem liberados.</p>
         <div className="mode-switch" aria-label="Tipo de alerta"><button type="button" className={mode === "cash" ? "selected" : ""} onClick={() => { setMode("cash"); setMessage(""); }}>Dinheiro</button><button type="button" className={mode === "miles" ? "selected" : ""} onClick={() => { setMode("miles"); setMessage(""); }}>Milhas</button></div>
         <div className="alert-fields">
           <label>Seu nome<div><input value={name} onChange={(e) => { setName(e.target.value); setMessage(""); }} placeholder="Como podemos te chamar?" required/></div></label>
@@ -46,7 +46,7 @@ export function AlertSection() {
         <label className="privacy" style={{display:"flex", gap:8, alignItems:"flex-start", textAlign:"left"}}><input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); setMessage(""); }} required/> Quero receber alertas de viagem do TripNordestinos no WhatsApp quando esta função estiver disponível. Posso cancelar depois.</label>
         <button className="create-alert"><Bell size={19}/>Criar alerta</button>
         {message && <div role="status" style={{marginTop:10, padding:"10px 12px", borderRadius:10, background:"#fff3cd", color:"#7a5700", fontSize:13, fontWeight:800, textAlign:"center"}}>{message}</div>}
-        <small className="privacy">Função em fase de testes. Nenhum cadastro ou dado é enviado nesta etapa.</small>
+        <small className="privacy">Função ainda não habilitada. Nenhum cadastro ou dado é enviado nesta etapa.</small>
       </form>
     </section>
   );
