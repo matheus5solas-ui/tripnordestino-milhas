@@ -32,16 +32,42 @@ const AIRLINE_SITES: Record<string, AirlineSite> = {
   BA: { name: "British Airways", url: "https://www.britishairways.com/" }
 };
 
-function toAzulDate(value?: string) {
+function parseDate(value?: string) {
   if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toIsoDate(value?: string) {
+  const date = parseDate(value);
+  if (!date) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+function toLatamDate(value?: string) {
+  const date = toIsoDate(value);
+  return date ? `${date}T00:00:00.000Z` : null;
+}
+
+function toAzulDate(value?: string) {
+  const date = parseDate(value);
+  if (!date) return null;
   return new Intl.DateTimeFormat("en-US", {
     timeZone: "UTC",
     month: "2-digit",
     day: "2-digit",
     year: "numeric"
   }).format(date);
+}
+
+function normalizeSearch(params: AirlineSearchParams) {
+  return {
+    origin: params.origin?.toUpperCase(),
+    destination: params.destination?.toUpperCase(),
+    departure: toIsoDate(params.departureAt),
+    returning: toIsoDate(params.returnAt),
+    passengers: Math.max(1, params.passengers ?? 1),
+  };
 }
 
 function buildAzulUrl(params: AirlineSearchParams) {
@@ -73,6 +99,57 @@ function buildAzulUrl(params: AirlineSearchParams) {
   return `https://www.voeazul.com.br/br/pt/home/selecao-voo?${search.toString()}`;
 }
 
+function buildGolUrl(params: AirlineSearchParams) {
+  const { origin, destination, departure, returning, passengers } = normalizeSearch(params);
+  if (!origin || !destination || !departure) return AIRLINE_SITES.G3.url;
+
+  const search = new URLSearchParams({
+    from: origin,
+    to: destination,
+    departureDate: departure,
+    numAdults: String(passengers),
+    numChildren: "0",
+    numInfants: "0",
+  });
+  if (returning) search.set("returnDate", returning);
+
+  return `https://www.voegol.com.br/itineraries?${search.toString()}`;
+}
+
+function buildLatamUrl(params: AirlineSearchParams) {
+  const { origin, destination, returning, passengers } = normalizeSearch(params);
+  const outbound = toLatamDate(params.departureAt);
+  const inbound = toLatamDate(params.returnAt);
+  if (!origin || !destination || !outbound) return AIRLINE_SITES.LA.url;
+
+  const search = new URLSearchParams({
+    origin,
+    outbound,
+    destination,
+    adt: String(passengers),
+    chd: "0",
+    inf: "0",
+    trip: returning ? "RT" : "OW",
+    cabin: "Economy",
+    redemption: "false",
+    sort: "RECOMMENDED",
+  });
+  if (inbound) search.set("inbound", inbound);
+
+  return `https://www.latamairlines.com/br/pt/oferta-voos?${search.toString()}`;
+}
+
+export function getDecolarBookingUrl(params: AirlineSearchParams) {
+  const { origin, destination, departure, returning, passengers } = normalizeSearch(params);
+  if (!origin || !destination || !departure) return "https://www.decolar.com/passagens-aereas";
+
+  if (returning) {
+    return `https://www.decolar.com/shop/flights/results/roundtrip/${origin}/${destination}/${departure}/${returning}/${passengers}/0/0?from=SB&di=${passengers}&reSearch=true`;
+  }
+
+  return `https://www.decolar.com/shop/flights/results/oneway/${origin}/${destination}/${departure}/${passengers}/0/0?from=SB&di=${passengers}&reSearch=true`;
+}
+
 export function getAirlineSite(code?: string, fallbackName?: string): AirlineSite | null {
   if (!code) return null;
   const normalized = code.toUpperCase();
@@ -83,5 +160,7 @@ export function getAirlineBookingUrl(code: string | undefined, params: AirlineSe
   if (!code) return null;
   const normalized = code.toUpperCase();
   if (normalized === "AD") return buildAzulUrl(params);
+  if (normalized === "G3") return buildGolUrl(params);
+  if (normalized === "LA") return buildLatamUrl(params);
   return AIRLINE_SITES[normalized]?.url ?? null;
 }
