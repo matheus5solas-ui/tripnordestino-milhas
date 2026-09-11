@@ -53,3 +53,5 @@ Para conectar o Supabase futuramente, configure `NEXT_PUBLIC_SUPABASE_URL` e `NE
 ## Deploy na Vercel
 
 Importe este repositório na Vercel, mantenha o preset **Next.js** e adicione as variáveis de ambiente quando a integração com Supabase for implementada. O comando de build padrão é `npm run build`.
+
+> Deploy inicial conectado à Vercel e ao projeto Supabase do TripNordestino.
