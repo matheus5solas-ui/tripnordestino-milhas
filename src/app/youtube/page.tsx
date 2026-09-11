@@ -1,6 +1,7 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { YoutubeVideos } from "@/components/YoutubeVideos";
+import "./youtube.css";
 
 export default function YoutubePage() {
   return (
