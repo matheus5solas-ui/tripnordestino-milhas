@@ -19,6 +19,7 @@ export interface FlightOffer {
   returnTransfers?: number;
   departureAt?: string;
   returnAt?: string;
+  foundAt?: string;
   bookingUrl?: string;
 }
 
