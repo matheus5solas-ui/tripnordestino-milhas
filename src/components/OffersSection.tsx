@@ -5,7 +5,7 @@ import { MOCK_OFFERS } from "@/data/mock-offers";
 import type { FlightOffer } from "@/types/travel";
 import { OfferCard } from "./OfferCard";
 
-type OffersApiResponse = { offers?: FlightOffer[]; source?: string; cached?: boolean; updatedAt?: string };
+type OffersApiResponse = { offers?: FlightOffer[]; source?: string; cached?: boolean; updatedAt?: string; matchType?: "exact"|"recent" };
 type SearchDetail = { origin:string; destination:string; departure?:string; returnDate?:string };
 
 export function OffersSection() {
@@ -14,6 +14,7 @@ export function OffersSection() {
   const [usingFallback, setUsingFallback] = useState(false);
   const [loading, setLoading] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string>();
+  const [matchType, setMatchType] = useState<"exact"|"recent">("exact");
   const [query, setQuery] = useState<SearchDetail>({ origin:"FOR", destination:"" });
 
   const loadOffers = useCallback(async (search: SearchDetail) => {
@@ -26,6 +27,7 @@ export function OffersSection() {
       const response = await fetch(`/api/offers?${params.toString()}`, { cache:"no-store" });
       if (!response.ok) throw new Error("Falha ao carregar ofertas");
       const payload = await response.json() as OffersApiResponse;
+      setMatchType(payload.matchType ?? "exact");
       if (payload.offers?.length) {
         setLiveOffers(payload.offers);
         setUsingFallback(false);
@@ -61,14 +63,21 @@ export function OffersSection() {
   const sourceOffers = liveOffers ?? MOCK_OFFERS;
   const offers = query.destination ? sourceOffers : sourceOffers.filter((offer) => offer.region === region);
   const title = query.destination ? `Ofertas de ${query.origin} para ${query.destination}` : "Melhores ofertas saindo de Fortaleza";
+  const subtitle = loading
+    ? "Consultando ofertas..."
+    : query.destination
+      ? matchType === "recent"
+        ? "Não havia preço armazenado para as datas exatas. Abaixo estão ofertas recentes da mesma rota para você comparar."
+        : "Resultados encontrados para os aeroportos e datas escolhidos."
+      : "Encontramos oportunidades para você viajar mais e pagar menos.";
 
   return (
     <section id="ofertas" className="offers-section">
-      <div className="section-heading"><div><span className="eyebrow">{query.destination ? "SUA PESQUISA" : "DECOLANDO DE FOR"}</span><h2>{title}</h2><p>{loading ? "Consultando ofertas..." : query.destination ? "Resultados recentes para os aeroportos e datas escolhidos." : "Encontramos oportunidades para você viajar mais e pagar menos."}</p></div>
+      <div className="section-heading"><div><span className="eyebrow">{query.destination ? "SUA PESQUISA" : "DECOLANDO DE FOR"}</span><h2>{title}</h2><p>{subtitle}</p></div>
         {!query.destination && <div className="region-tabs" role="tablist"><button onClick={() => setRegion("Brasil")} className={region==="Brasil"?"active":""}>Brasil</button><button onClick={() => setRegion("Internacional")} className={region==="Internacional"?"active":""}>Internacional</button></div>}
       </div>
-      {!loading && offers.length === 0 ? <div className="empty-offers"><strong>Nenhuma oferta recente encontrada para essa combinação.</strong><span>Tente outras datas ou aeroportos. A base atual é de preços encontrados recentemente, não disponibilidade em tempo real.</span></div> : <div className="offers-grid">{offers.map((offer) => <OfferCard key={offer.id} offer={offer}/>)}</div>}
-      <p className="demo-note">{usingFallback ? "* Dados demonstrativos exibidos temporariamente. A fonte de ofertas não respondeu nesta consulta." : `* Ofertas via Aviasales/Travelpayouts. Consulta do site atualizada a cada 15 min${updatedAt ? ` • última consulta ${new Date(updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}` : ""}. A fonte é cacheada e o preço pode mudar ao verificar disponibilidade.`}</p>
+      {!loading && offers.length === 0 ? <div className="empty-offers"><strong>Nenhuma oferta recente encontrada para essa rota.</strong><span>A fonte atual ainda não possui preço armazenado para essa combinação de aeroportos. Tente outro aeroporto ou consulte novamente mais tarde.</span></div> : <div className="offers-grid">{offers.map((offer) => <OfferCard key={offer.id} offer={offer}/>)}</div>}
+      <p className="demo-note">{usingFallback ? "* Dados demonstrativos exibidos temporariamente. A fonte de ofertas não respondeu nesta consulta." : `* Ofertas via Aviasales/Travelpayouts. Consulta do site atualizada a cada 15 min${updatedAt ? ` • última consulta ${new Date(updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}` : ""}. ${matchType === "recent" && query.destination ? "Os valores exibidos são recentes da mesma rota, mas não correspondem necessariamente às datas solicitadas. " : ""}A fonte é cacheada e o preço pode mudar ao verificar disponibilidade.`}</p>
     </section>
   );
 }
