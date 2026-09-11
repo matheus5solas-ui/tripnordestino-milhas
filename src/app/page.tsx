@@ -1,4 +1,5 @@
 import { AlertSection } from "@/components/AlertSection";
+import { CurrencyTicker } from "@/components/CurrencyTicker";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { OffersSection } from "@/components/OffersSection";
@@ -9,6 +10,7 @@ export default function Home() {
   return <main>
     <div className="hero" id="buscar">
       <Header/>
+      <CurrencyTicker/>
       <div className="sun one"/><div className="sun two"/>
       <div className="hero-copy"><span className="hero-kicker"><Sparkles size={14}/> Seu próximo destino começa aqui</span><h1>Viaje mais.<br/><em>Compare melhor.</em></h1><p>Encontre passagens em dinheiro e milhas<br className="desktop-break"/> e escolha a opção que vale mais a pena.</p></div>
       <SearchBox/>
