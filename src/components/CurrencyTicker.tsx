@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import styles from "./CurrencyTicker.module.css";
 
 type Quote = { code: string; name: string; flag: string; value: number; change: number };
 
@@ -22,25 +23,25 @@ export function CurrencyTicker() {
     return () => { active = false; };
   }, []);
 
-  if (!quotes.length) return <div className="currency-strip currency-loading"><span>CÂMBIO PARA VIAJANTES</span><small>Carregando cotações...</small></div>;
+  if (!quotes.length) return <div className={`${styles.strip} ${styles.loading}`}><span>CÂMBIO PARA VIAJANTES</span><small>Carregando cotações...</small></div>;
   const loop = [...quotes, ...quotes];
 
   return (
-    <div className="currency-strip" aria-label="Cotações de moedas para viajantes">
-      <div className="currency-label"><strong>CÂMBIO</strong><span>1 moeda em R$</span></div>
-      <div className="currency-window">
-        <div className="currency-track">
+    <div className={styles.strip} aria-label="Cotações de moedas para viajantes">
+      <div className={styles.label}><strong>CÂMBIO</strong><span>1 moeda em R$</span></div>
+      <div className={styles.window}>
+        <div className={styles.track}>
           {loop.map((quote, index) => (
-            <div className="currency-item" key={`${quote.code}-${index}`} title={`${quote.name}: 1 ${quote.code} em reais`}>
-              <span className="currency-flag">{quote.flag}</span>
+            <div className={styles.item} key={`${quote.code}-${index}`} title={`${quote.name}: 1 ${quote.code} em reais`}>
+              <span className={styles.flag}>{quote.flag}</span>
               <strong>{quote.code}</strong>
               <span>R$ {price(quote.value)}</span>
-              <em className={quote.change > 0 ? "currency-up" : quote.change < 0 ? "currency-down" : "currency-flat"}>{quote.change > 0 ? "▲" : quote.change < 0 ? "▼" : "•"} {Math.abs(quote.change).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%</em>
+              <em className={quote.change > 0 ? styles.up : quote.change < 0 ? styles.down : styles.flat}>{quote.change > 0 ? "▲" : quote.change < 0 ? "▼" : "•"} {Math.abs(quote.change).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%</em>
             </div>
           ))}
         </div>
       </div>
-      <span className="currency-source">cotação indicativa</span>
+      <span className={styles.source}>cotação indicativa</span>
     </div>
   );
 }
