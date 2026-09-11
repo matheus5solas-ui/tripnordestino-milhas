@@ -3,7 +3,7 @@
 import { CalendarDays, Heart, Plane } from "lucide-react";
 import { useState } from "react";
 import type { FlightOffer } from "@/types/travel";
-import { getAirlineBookingUrl, getAirlineSite } from "@/data/airline-sites";
+import { getAirlineBookingUrl, getAirlineSite, getDecolarBookingUrl } from "@/data/airline-sites";
 
 const money = new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL", maximumFractionDigits:0 });
 const number = new Intl.NumberFormat("pt-BR");
@@ -19,14 +19,16 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
   const [expanded, setExpanded] = useState(false);
   const airlineSite = getAirlineSite(offer.airlineCode, offer.airlineName);
   const origin = offer.originAirport ?? offer.route.split(" → ")[0]?.trim();
-  const bookingUrl = getAirlineBookingUrl(offer.airlineCode, {
+  const searchParams = {
     origin,
     destination: offer.airport,
     departureAt: offer.departureAt,
     returnAt: offer.returnAt,
     passengers: 1,
-  });
-  const hasVerifiedDeepLink = offer.airlineCode?.toUpperCase() === "AD";
+  };
+  const bookingUrl = getAirlineBookingUrl(offer.airlineCode, searchParams);
+  const decolarUrl = getDecolarBookingUrl(searchParams);
+  const hasFilteredAirlineLink = ["AD", "G3", "LA"].includes(offer.airlineCode?.toUpperCase() ?? "");
 
   return (
     <article className={`offer-card ${expanded ? "expanded" : ""}`}>
@@ -49,14 +51,18 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
           <div><span>Volta</span><strong>{stops(offer.returnTransfers)}</strong></div>
           {airlineSite?.url && bookingUrl ? <>
             <a className="booking-link" href={bookingUrl} target="_blank" rel="noopener noreferrer">
-              {hasVerifiedDeepLink ? `Buscar esta rota na ${airlineSite.name} →` : `Consultar no site da ${airlineSite.name} →`}
+              {hasFilteredAirlineLink ? `Buscar esta rota na ${airlineSite.name} →` : `Consultar no site da ${airlineSite.name} →`}
             </a>
+            <a className="booking-link" href={decolarUrl} target="_blank" rel="noopener noreferrer">Comparar esta rota na Decolar →</a>
             <span className="booking-unavailable">
-              {hasVerifiedDeepLink
-                ? "Abrimos a busca oficial com rota, datas e passageiro preenchidos. O preço pode ter mudado; confirme o valor antes de comprar."
-                : "Preço encontrado recentemente para esta companhia. Consulte disponibilidade, datas e valor atual diretamente no site oficial."}
+              {hasFilteredAirlineLink
+                ? "Abrimos a busca com rota, datas e passageiro preenchidos quando o parceiro aceita esses parâmetros. Preços e disponibilidade podem mudar."
+                : "Preço encontrado recentemente. Consulte disponibilidade, datas e valor atual antes de comprar."}
             </span>
-          </> : offer.bookingUrl ? <a className="booking-link" href={offer.bookingUrl} target="_blank" rel="noopener noreferrer">Comparar disponibilidade →</a> : <span className="booking-unavailable">Site oficial da companhia ainda não mapeado para esta oferta.</span>}
+          </> : <>
+            <a className="booking-link" href={decolarUrl} target="_blank" rel="noopener noreferrer">Comparar esta rota na Decolar →</a>
+            <span className="booking-unavailable">Consulte o valor atual e a disponibilidade antes de comprar.</span>
+          </>}
         </div>}
       </div>
     </article>
