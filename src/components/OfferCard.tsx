@@ -14,6 +14,13 @@ function stops(value?: number) {
   return `${value} ${value === 1 ? "escala" : "escalas"}`;
 }
 
+function priceFoundLabel(value?: string) {
+  if (!value) return "Preço encontrado recentemente";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Preço encontrado recentemente";
+  return `Preço encontrado em ${date.toLocaleDateString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric" })} às ${date.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" })}`;
+}
+
 export function OfferCard({ offer }: { offer: FlightOffer }) {
   const [favorite, setFavorite] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -42,6 +49,7 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
         <div className="route-row"><span><Plane size={16}/>{offer.route}</span><span><CalendarDays size={15}/>{offer.dates}</span></div>
         <div className="price-label">Ida e volta a partir de</div>
         <div className="price-row"><div><strong>{money.format(offer.cashPrice)}</strong><small>por pessoa</small></div>{offer.milesPrice && <><span className="or">ou</span><div className="miles"><strong>{number.format(offer.milesPrice)}</strong><small>milhas + taxas</small></div></>}</div>
+        <div className="price-label">{priceFoundLabel(offer.foundAt)}</div>
         <button type="button" className="details" onClick={() => setExpanded(!expanded)}>{expanded?"Ocultar detalhes":"Ver detalhes"} <span>{expanded?"↑":"→"}</span></button>
         {expanded && <div className="flight-details">
           <div><span>Companhia</span><strong>{offer.airlineName ?? "Não informada pela fonte"}{offer.airlineCode ? ` (${offer.airlineCode})` : ""}</strong></div>
@@ -54,11 +62,7 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
               {hasFilteredAirlineLink ? `Buscar esta rota na ${airlineSite.name} →` : `Consultar no site da ${airlineSite.name} →`}
             </a>
             <a className="booking-link" href={decolarUrl} target="_blank" rel="noopener noreferrer">Comparar esta rota na Decolar →</a>
-            <span className="booking-unavailable">
-              {hasFilteredAirlineLink
-                ? "Abrimos a busca com rota, datas e passageiro preenchidos quando o parceiro aceita esses parâmetros. Preços e disponibilidade podem mudar."
-                : "Preço encontrado recentemente. Consulte disponibilidade, datas e valor atual antes de comprar."}
-            </span>
+            <span className="booking-unavailable">O horário acima informa quando a fonte encontrou a tarifa, quando esse dado está disponível. Confirme preço e disponibilidade antes de comprar.</span>
           </> : <>
             <a className="booking-link" href={decolarUrl} target="_blank" rel="noopener noreferrer">Comparar esta rota na Decolar →</a>
             <span className="booking-unavailable">Consulte o valor atual e a disponibilidade antes de comprar.</span>
