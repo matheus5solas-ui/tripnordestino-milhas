@@ -11,6 +11,15 @@ export interface FlightOffer {
   tag: "Ótimo preço" | "Oferta";
   region: OfferRegion;
   theme: string;
+  originAirport?: string;
+  airlineCode?: string;
+  airlineName?: string;
+  flightNumber?: string;
+  transfers?: number;
+  returnTransfers?: number;
+  departureAt?: string;
+  returnAt?: string;
+  bookingUrl?: string;
 }
 
 export interface FlightSearch {
