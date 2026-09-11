@@ -44,7 +44,7 @@ function toOffer(item: AviasalesOffer, requestedOrigin: string): FlightOffer | n
   const rawLink = item.link?.trim();
   const bookingUrl = rawLink ? (rawLink.startsWith("http") ? rawLink : `https://www.aviasales.com${rawLink.startsWith("/") ? "" : "/"}${rawLink}`) : undefined;
   return {
-    id: `${originCode}-${code}-${item.departure_at ?? "recent"}`,
+    id: `${originCode}-${code}-${item.departure_at ?? "recent"}-${airlineCode ?? "airline"}`,
     destination: DESTINATION_NAMES[code] ?? code,
     airport: code,
     originAirport: originCode,
@@ -65,6 +65,26 @@ function toOffer(item: AviasalesOffer, requestedOrigin: string): FlightOffer | n
   };
 }
 
+function mapOffers(data: AviasalesOffer[], origin: string, destination: string) {
+  const cheapest = new Map<string, FlightOffer>();
+  for (const item of data) {
+    const offer = toOffer(item, origin);
+    if (!offer) continue;
+    const key = destination ? `${offer.route}-${offer.dates}-${offer.airlineCode ?? "airline"}` : offer.airport;
+    const current = cheapest.get(key);
+    if (!current || offer.cashPrice < current.cashPrice) cheapest.set(key, offer);
+  }
+  return Array.from(cheapest.values()).sort((a,b) => a.cashPrice-b.cashPrice);
+}
+
+async function queryTravelpayouts(params: URLSearchParams) {
+  const response = await fetch(`https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${params.toString()}`, { next:{ revalidate:900 } });
+  if (!response.ok) return null;
+  const payload = await response.json() as AviasalesResponse;
+  if (!payload.success || !Array.isArray(payload.data)) return null;
+  return payload.data;
+}
+
 export async function GET(request: NextRequest) {
   const token = process.env.TRAVELPAYOUTS_API_TOKEN;
   if (!token) return NextResponse.json({ error:"TRAVELPAYOUTS_API_TOKEN não configurado." }, { status:503 });
@@ -76,26 +96,36 @@ export async function GET(request: NextRequest) {
   const returnAt = search.get("return_at") || "";
 
   try {
-    const params = new URLSearchParams({ origin, currency:"brl", market:"br", locale:"pt", sorting:"price", direct:"false", one_way:"false", unique: destination ? "false" : "true", limit: destination ? "100" : "1000", page:"1", token });
-    if (destination) params.set("destination", destination);
-    if (departureAt) params.set("departure_at", departureAt);
-    if (returnAt) params.set("return_at", returnAt);
+    const baseParams = new URLSearchParams({ origin, currency:"brl", market:"br", locale:"pt", sorting:"price", direct:"false", one_way:"false", unique: destination ? "false" : "true", limit: destination ? "100" : "1000", page:"1", token });
+    if (destination) baseParams.set("destination", destination);
 
-    const response = await fetch(`https://api.travelpayouts.com/aviasales/v3/prices_for_dates?${params.toString()}`, { next:{ revalidate:900 } });
-    if (!response.ok) return NextResponse.json({ error:"A Travelpayouts não respondeu à consulta de ofertas." }, { status:502 });
-    const payload = await response.json() as AviasalesResponse;
-    if (!payload.success || !Array.isArray(payload.data)) return NextResponse.json({ error:"A Travelpayouts não retornou ofertas válidas." }, { status:502 });
+    const exactParams = new URLSearchParams(baseParams);
+    if (departureAt) exactParams.set("departure_at", departureAt);
+    if (returnAt) exactParams.set("return_at", returnAt);
 
-    const cheapest = new Map<string, FlightOffer>();
-    for (const item of payload.data) {
-      const offer = toOffer(item, origin);
-      if (!offer) continue;
-      const key = destination ? `${offer.route}-${offer.dates}-${offer.airlineCode ?? "airline"}` : offer.airport;
-      const current = cheapest.get(key);
-      if (!current || offer.cashPrice < current.cashPrice) cheapest.set(key, offer);
+    const exactData = await queryTravelpayouts(exactParams);
+    if (exactData === null) return NextResponse.json({ error:"A Travelpayouts não respondeu à consulta de ofertas." }, { status:502 });
+
+    let offers = mapOffers(exactData, origin, destination);
+    let matchType: "exact" | "recent" = "exact";
+
+    if (destination && offers.length === 0 && (departureAt || returnAt)) {
+      const recentData = await queryTravelpayouts(baseParams);
+      if (recentData) {
+        offers = mapOffers(recentData, origin, destination);
+        matchType = "recent";
+      }
     }
-    const offers = Array.from(cheapest.values()).sort((a,b) => a.cashPrice-b.cashPrice);
-    return NextResponse.json({ offers, source:"Aviasales Flight Data API / Travelpayouts", cached:true, refreshIntervalMinutes:15, updatedAt:new Date().toISOString() });
+
+    return NextResponse.json({
+      offers,
+      source:"Aviasales Flight Data API / Travelpayouts",
+      cached:true,
+      matchType,
+      requestedDates:{ departureAt, returnAt },
+      refreshIntervalMinutes:15,
+      updatedAt:new Date().toISOString()
+    });
   } catch {
     return NextResponse.json({ error:"Não foi possível consultar as ofertas agora." }, { status:502 });
   }
