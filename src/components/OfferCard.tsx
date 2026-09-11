@@ -3,6 +3,7 @@
 import { CalendarDays, Heart, Plane } from "lucide-react";
 import { useState } from "react";
 import type { FlightOffer } from "@/types/travel";
+import { getAirlineSite } from "@/data/airline-sites";
 
 const money = new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL", maximumFractionDigits:0 });
 const number = new Intl.NumberFormat("pt-BR");
@@ -16,6 +17,7 @@ function stops(value?: number) {
 export function OfferCard({ offer }: { offer: FlightOffer }) {
   const [favorite, setFavorite] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const airlineSite = getAirlineSite(offer.airlineCode, offer.airlineName);
   return (
     <article className={`offer-card ${expanded ? "expanded" : ""}`}>
       <button type="button" className={`destination-art ${offer.theme}`} onClick={() => setExpanded(!expanded)} aria-label={`Ver detalhes de ${offer.destination}`}>
@@ -35,7 +37,10 @@ export function OfferCard({ offer }: { offer: FlightOffer }) {
           <div><span>Aeroportos</span><strong>{offer.originAirport ?? offer.route.split(" → ")[0]} → {offer.airport}</strong></div>
           <div><span>Ida</span><strong>{stops(offer.transfers)}</strong></div>
           <div><span>Volta</span><strong>{stops(offer.returnTransfers)}</strong></div>
-          {offer.bookingUrl ? <a className="booking-link" href={offer.bookingUrl} target="_blank" rel="noopener noreferrer">Ver oferta e disponibilidade →</a> : <span className="booking-unavailable">Link de disponibilidade não fornecido nesta oferta.</span>}
+          {airlineSite?.url ? <>
+            <a className="booking-link" href={airlineSite.url} target="_blank" rel="noopener noreferrer">Buscar este voo na {airlineSite.name} →</a>
+            <span className="booking-unavailable">O preço foi encontrado recentemente. Confirme datas, voo e valor diretamente no site da companhia.</span>
+          </> : offer.bookingUrl ? <a className="booking-link" href={offer.bookingUrl} target="_blank" rel="noopener noreferrer">Comparar disponibilidade →</a> : <span className="booking-unavailable">Site oficial da companhia ainda não mapeado para esta oferta.</span>}
         </div>}
       </div>
     </article>
