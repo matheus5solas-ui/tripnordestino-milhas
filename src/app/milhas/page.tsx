@@ -22,11 +22,11 @@ const programs = [
   },
   {
     name: "Azul Fidelidade",
-    status: "Monitorando",
-    latest: "Sem campanha pública validada agora",
-    latestDetail: "Nenhuma bonificação pública atual foi confirmada nesta atualização.",
-    cost: "Aguardando campanha validada",
-    note: "Só exibiremos valor quando houver regra e fonte oficial suficientes para o cálculo.",
+    status: "Campanha ativa",
+    latest: "Até 110% de bônus + 2.000 pontos",
+    latestDetail: "Transferência de pontos de parceiros bancários. Oferta exibida pela Azul com validade de 11 a 13/09/2026.",
+    cost: "Depende do custo do ponto de origem",
+    note: "O bônus efetivo depende das regras, parceiro e elegibilidade da promoção. Consulte e cadastre-se na página oficial antes da transferência.",
   },
   {
     name: "Iberia Club",
@@ -47,6 +47,14 @@ const programs = [
 ];
 
 const campaigns = [
+  {
+    program: "Azul Fidelidade",
+    title: "Até 110% de bônus + 2.000 pontos na primeira transferência",
+    period: "11 a 13/09/2026",
+    status: "Ativa",
+    description: "Semana do Cliente: campanha de transferência de pontos de parceiros bancários para o Azul Fidelidade. Consulte elegibilidade e faça o cadastro antes de transferir.",
+    href: "https://www.voeazul.com.br/br/pt/home",
+  },
   {
     program: "Smiles",
     title: "Até 300% de bônus na compra de milhas",
