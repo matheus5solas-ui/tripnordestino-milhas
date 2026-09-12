@@ -6,8 +6,12 @@ import type { FlightOffer } from "@/types/travel";
 export const revalidate = 12600;
 
 const BRAZIL_IATA = new Set([
-  "AJU","BEL","BPS","BSB","CGB","CGH","CNF","CPV","CWB","FLN","FOR","GIG","GRU","IGU","JDO","JOI","LDB","MAO","MCZ","NAT","NVT","POA","PVH","REC","SDU","SLZ","SSA","THE","UDI","VCP","VIX",
+  "AJU","BEL","BPS","BSB","CGB","CGH","CNF","CPV","CWB","FEN","FLN","FOR","GIG","GRU","IGU","JDO","JOI","LDB","MAO","MCZ","NAT","NVT","POA","PVH","REC","SDU","SLZ","SSA","THE","UDI","VCP","VIX",
 ]);
+
+const BRAZIL_DESTINATION_IATA: Record<string, string> = {
+  "fernando de noronha": "FEN",
+};
 
 type ExploreDestination = {
   destination_id?: string;
@@ -56,6 +60,14 @@ function isBrazil(country: string | undefined, airport: string) {
   return BRAZIL_IATA.has(airport);
 }
 
+function recoverBrazilAirport(result: ExploreDestination) {
+  const existing = result.destination_airport?.code?.toUpperCase();
+  if (existing) return existing;
+  const country = normalize(result.country);
+  if (country !== "brasil" && country !== "brazil") return undefined;
+  return BRAZIL_DESTINATION_IATA[normalize(result.name)];
+}
+
 function keepCheapestPerAirport(offers: FlightOffer[]) {
   const byAirport = new Map<string, FlightOffer>();
   for (const offer of offers) {
@@ -99,6 +111,7 @@ export async function GET(request: NextRequest) {
     const foundAt = data.search_metadata?.created_at;
     let invalidRemoved = 0;
     let priceFilterRemoved = 0;
+    let recoveredAirportCodes = 0;
     const discardedSamples: Array<{
       name?: string;
       country?: string;
@@ -109,7 +122,9 @@ export async function GET(request: NextRequest) {
     }> = [];
 
     const rawOffers: FlightOffer[] = destinations.flatMap<FlightOffer>((result, index) => {
-      const airport = result.destination_airport?.code?.toUpperCase();
+      const originalAirport = result.destination_airport?.code?.toUpperCase();
+      const airport = recoverBrazilAirport(result);
+      if (!originalAirport && airport) recoveredAirportCodes += 1;
       const price = Number(result.flight_price);
       const destination = result.destination_airport?.location || result.name;
 
@@ -190,6 +205,7 @@ export async function GET(request: NextRequest) {
           invalidRemoved,
           duplicatesRemoved,
           priceFilterRemoved,
+          recoveredAirportCodes,
           countryCounts,
           discardedSamples,
         },
