@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { FlightOffer } from "@/types/travel";
 
-export const revalidate = 3600;
+// Uma consulta nova no máximo a cada 4h. Isso limita o radar a até 6 consultas/dia
+// quando houver tráfego, preservando a franquia gratuita da SerpApi.
+export const revalidate = 14400;
+
+const BRAZIL_IATA = new Set([
+  "AJU","BEL","BPS","BSB","CGB","CGH","CNF","CPV","CWB","FLN","FOR","GIG","GRU","IGU","JDO","JOI","LDB","MAO","MCZ","NAT","NVT","POA","PVH","REC","SDU","SLZ","SSA","THE","UDI","VCP","VIX",
+]);
 
 type ExploreDestination = {
   destination_id?: string;
@@ -24,7 +30,7 @@ type ExploreDestination = {
 };
 
 type SerpApiExploreResponse = {
-  search_metadata?: { created_at?: string; status?: string };
+  search_metadata?: { created_at?: string; status?: string; id?: string };
   destinations?: ExploreDestination[];
   error?: string;
 };
@@ -39,10 +45,24 @@ function slug(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function isBrazil(country?: string) {
-  if (!country) return false;
-  const normalized = country.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  return normalized === "brazil" || normalized === "brasil";
+function normalize(value?: string) {
+  return (value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function isBrazil(country: string | undefined, airport: string) {
+  const normalizedCountry = normalize(country);
+  if (normalizedCountry === "brazil" || normalizedCountry === "brasil") return true;
+  if (normalizedCountry && normalizedCountry !== "brazil" && normalizedCountry !== "brasil") return false;
+  return BRAZIL_IATA.has(airport);
+}
+
+function keepCheapestPerAirport(offers: FlightOffer[]) {
+  const byAirport = new Map<string, FlightOffer>();
+  for (const offer of offers) {
+    const existing = byAirport.get(offer.airport);
+    if (!existing || offer.cashPrice < existing.cashPrice) byAirport.set(offer.airport, offer);
+  }
+  return [...byAirport.values()].sort((a, b) => a.cashPrice - b.cashPrice);
 }
 
 export async function GET(request: NextRequest) {
@@ -62,7 +82,7 @@ export async function GET(request: NextRequest) {
   url.searchParams.set("api_key", apiKey);
 
   try {
-    const response = await fetch(url, { next: { revalidate: 3600 } });
+    const response = await fetch(url, { next: { revalidate: 14400 } });
     if (!response.ok) {
       const body = await response.text();
       console.error("SerpApi explore error", response.status, body.slice(0, 500));
@@ -76,14 +96,12 @@ export async function GET(request: NextRequest) {
     }
 
     const foundAt = data.search_metadata?.created_at;
-    const offers: FlightOffer[] = (data.destinations ?? []).flatMap<FlightOffer>((result, index) => {
-      const destination = result.name;
-      const airport = result.destination_airport?.code;
+    const rawOffers: FlightOffer[] = (data.destinations ?? []).flatMap<FlightOffer>((result, index) => {
+      const airport = result.destination_airport?.code?.toUpperCase();
       const price = Number(result.flight_price);
+      const destination = result.destination_airport?.location || result.name;
 
-      if (!destination || !airport || !Number.isFinite(price) || price <= 0 || (maxPrice > 0 && price > maxPrice)) {
-        return [];
-      }
+      if (!destination || !airport || !Number.isFinite(price) || price <= 0 || (maxPrice > 0 && price > maxPrice)) return [];
 
       const offer: FlightOffer = {
         id: `serpapi-${origin}-${airport}-${result.start_date ?? index}`,
@@ -93,7 +111,7 @@ export async function GET(request: NextRequest) {
         dates: `${formatDate(result.start_date)} → ${formatDate(result.end_date)}`,
         cashPrice: price,
         tag: "Oferta",
-        region: isBrazil(result.country) ? "Brasil" : "Internacional",
+        region: isBrazil(result.country, airport) ? "Brasil" : "Internacional",
         theme: slug(destination),
         originAirport: origin,
         airlineCode: result.airline_code,
@@ -106,17 +124,25 @@ export async function GET(request: NextRequest) {
       };
 
       return [offer];
-    }).sort((a, b) => a.cashPrice - b.cashPrice);
+    });
+
+    const unique = keepCheapestPerAirport(rawOffers);
+    const brazil = unique.filter((offer) => offer.region === "Brasil").slice(0, 3);
+    const international = unique.filter((offer) => offer.region === "Internacional").slice(0, 3);
+    const offers = [...brazil, ...international];
 
     return NextResponse.json(
       {
         offers,
         configured: true,
         source: "SerpApi / Google Travel Explore",
+        provider: "serpapi",
+        providerSearchId: data.search_metadata?.id,
         updatedAt: foundAt ?? new Date().toISOString(),
         matchType: "exact",
+        radarPolicy: "3-brasil-3-internacional-cache-4h",
       },
-      { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=7200" } },
+      { headers: { "Cache-Control": "public, s-maxage=14400, stale-while-revalidate=28800" } },
     );
   } catch (error) {
     console.error("SerpApi explore request failed", error);
