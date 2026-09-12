@@ -75,14 +75,14 @@ export async function GET(request: NextRequest) {
 
     const rows = data.results ?? data.destinations ?? [];
     const foundAt = data.search_metadata?.created_at;
-    const offers: FlightOffer[] = rows.flatMap((result, index) => {
+    const offers: FlightOffer[] = rows.flatMap<FlightOffer>((result, index) => {
       const cheapest = [...(result.flights ?? [])].sort((a, b) => Number(a.price ?? Infinity) - Number(b.price ?? Infinity))[0];
       const destination = result.destination?.name ?? cheapest?.arrival_airport?.name;
       const airport = cheapest?.arrival_airport?.id;
       const price = Number(cheapest?.price ?? result.flight_price);
       if (!destination || !airport || !Number.isFinite(price) || price <= 0 || (maxPrice > 0 && price > maxPrice)) return [];
 
-      return [{
+      const offer: FlightOffer = {
         id: `serpapi-${origin}-${airport}-${result.start_date ?? index}`,
         destination,
         airport,
@@ -100,7 +100,9 @@ export async function GET(request: NextRequest) {
         returnAt: result.end_date,
         foundAt,
         bookingUrl: result.google_flights_link ?? result.destination?.link,
-      }];
+      };
+
+      return [offer];
     }).sort((a, b) => a.cashPrice - b.cashPrice);
 
     return NextResponse.json(
