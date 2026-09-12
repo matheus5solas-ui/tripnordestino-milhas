@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { FlightOffer } from "@/types/travel";
 
-// Uma consulta nova no máximo a cada 4h. Isso limita o radar a até 6 consultas/dia
-// quando houver tráfego, preservando a franquia gratuita da SerpApi.
-export const revalidate = 14400;
+// Atualização mais frequente sem encostar no teto de 250/mês.
+// 3h30 = ~6,9 janelas/dia, cerca de 213 em 31 dias no pior caso de tráfego contínuo.
+export const revalidate = 12600;
 
 const BRAZIL_IATA = new Set([
   "AJU","BEL","BPS","BSB","CGB","CGH","CNF","CPV","CWB","FLN","FOR","GIG","GRU","IGU","JDO","JOI","LDB","MAO","MCZ","NAT","NVT","POA","PVH","REC","SDU","SLZ","SSA","THE","UDI","VCP","VIX",
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
   url.searchParams.set("api_key", apiKey);
 
   try {
-    const response = await fetch(url, { next: { revalidate: 14400 } });
+    const response = await fetch(url, { next: { revalidate: 12600 } });
     if (!response.ok) {
       const body = await response.text();
       console.error("SerpApi explore error", response.status, body.slice(0, 500));
@@ -99,6 +99,14 @@ export async function GET(request: NextRequest) {
     const foundAt = data.search_metadata?.created_at;
     let invalidRemoved = 0;
     let priceFilterRemoved = 0;
+    const discardedSamples: Array<{
+      name?: string;
+      country?: string;
+      airport?: string;
+      location?: string;
+      price?: number;
+      reason: string;
+    }> = [];
 
     const rawOffers: FlightOffer[] = destinations.flatMap<FlightOffer>((result, index) => {
       const airport = result.destination_airport?.code?.toUpperCase();
@@ -107,6 +115,16 @@ export async function GET(request: NextRequest) {
 
       if (!destination || !airport || !Number.isFinite(price) || price <= 0) {
         invalidRemoved += 1;
+        if (discardedSamples.length < 40) {
+          discardedSamples.push({
+            name: result.name,
+            country: result.country,
+            airport,
+            location: result.destination_airport?.location,
+            price: Number.isFinite(price) ? price : undefined,
+            reason: !destination ? "missing-destination" : !airport ? "missing-airport-code" : !Number.isFinite(price) || price <= 0 ? "missing-or-invalid-price" : "invalid",
+          });
+        }
         return [];
       }
       if (maxPrice > 0 && price > maxPrice) {
@@ -145,6 +163,12 @@ export async function GET(request: NextRequest) {
     const international = allInternational.slice(0, 3);
     const offers = [...brazil, ...international];
 
+    const countryCounts = destinations.reduce<Record<string, number>>((acc, item) => {
+      const key = item.country || "(sem país)";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
     return NextResponse.json(
       {
         offers,
@@ -154,7 +178,7 @@ export async function GET(request: NextRequest) {
         providerSearchId: data.search_metadata?.id,
         updatedAt: foundAt ?? new Date().toISOString(),
         matchType: "exact",
-        radarPolicy: "3-brasil-3-internacional-cache-4h",
+        radarPolicy: "3-brasil-3-internacional-cache-3h30",
         diagnostic: {
           providerDestinations: destinations.length,
           validBeforeDedup: rawOffers.length,
@@ -166,9 +190,11 @@ export async function GET(request: NextRequest) {
           invalidRemoved,
           duplicatesRemoved,
           priceFilterRemoved,
+          countryCounts,
+          discardedSamples,
         },
       },
-      { headers: { "Cache-Control": "public, s-maxage=14400, stale-while-revalidate=28800" } },
+      { headers: { "Cache-Control": "public, s-maxage=12600, stale-while-revalidate=25200" } },
     );
   } catch (error) {
     console.error("SerpApi explore request failed", error);
