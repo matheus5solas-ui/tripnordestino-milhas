@@ -95,13 +95,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ offers: [], source: "serpapi", error: data.error }, { status: 502 });
     }
 
+    const destinations = data.destinations ?? [];
     const foundAt = data.search_metadata?.created_at;
-    const rawOffers: FlightOffer[] = (data.destinations ?? []).flatMap<FlightOffer>((result, index) => {
+    let invalidRemoved = 0;
+    let priceFilterRemoved = 0;
+
+    const rawOffers: FlightOffer[] = destinations.flatMap<FlightOffer>((result, index) => {
       const airport = result.destination_airport?.code?.toUpperCase();
       const price = Number(result.flight_price);
       const destination = result.destination_airport?.location || result.name;
 
-      if (!destination || !airport || !Number.isFinite(price) || price <= 0 || (maxPrice > 0 && price > maxPrice)) return [];
+      if (!destination || !airport || !Number.isFinite(price) || price <= 0) {
+        invalidRemoved += 1;
+        return [];
+      }
+      if (maxPrice > 0 && price > maxPrice) {
+        priceFilterRemoved += 1;
+        return [];
+      }
 
       const offer: FlightOffer = {
         id: `serpapi-${origin}-${airport}-${result.start_date ?? index}`,
@@ -127,8 +138,11 @@ export async function GET(request: NextRequest) {
     });
 
     const unique = keepCheapestPerAirport(rawOffers);
-    const brazil = unique.filter((offer) => offer.region === "Brasil").slice(0, 3);
-    const international = unique.filter((offer) => offer.region === "Internacional").slice(0, 3);
+    const duplicatesRemoved = Math.max(0, rawOffers.length - unique.length);
+    const allBrazil = unique.filter((offer) => offer.region === "Brasil");
+    const allInternational = unique.filter((offer) => offer.region === "Internacional");
+    const brazil = allBrazil.slice(0, 3);
+    const international = allInternational.slice(0, 3);
     const offers = [...brazil, ...international];
 
     return NextResponse.json(
@@ -141,6 +155,18 @@ export async function GET(request: NextRequest) {
         updatedAt: foundAt ?? new Date().toISOString(),
         matchType: "exact",
         radarPolicy: "3-brasil-3-internacional-cache-4h",
+        diagnostic: {
+          providerDestinations: destinations.length,
+          validBeforeDedup: rawOffers.length,
+          uniqueAfterDedup: unique.length,
+          brazilAvailable: allBrazil.length,
+          internationalAvailable: allInternational.length,
+          brazilDisplayed: brazil.length,
+          internationalDisplayed: international.length,
+          invalidRemoved,
+          duplicatesRemoved,
+          priceFilterRemoved,
+        },
       },
       { headers: { "Cache-Control": "public, s-maxage=14400, stale-while-revalidate=28800" } },
     );
