@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "@/app/milhas/milhas.module.css";
 
 type NewsItem = {
@@ -10,6 +10,7 @@ type NewsItem = {
   description: string;
   detail: string;
   href: string;
+  expiresAt?: string;
 };
 
 const NEWS: NewsItem[] = [
@@ -28,6 +29,7 @@ const NEWS: NewsItem[] = [
     description: "A campanha de compra de milhas vai até 21h de 11/09/2026 e o percentual varia conforme Clube Smiles e categoria do participante.",
     detail: "Promoção oficial Smiles. Verifique o preço do milheiro para a sua conta antes da compra.",
     href: "https://www.smiles.com.br/campanhas/comprademilhas-300-20260902",
+    expiresAt: "2026-09-11T21:00:00-03:00",
   },
   {
     program: "LATAM Pass",
@@ -36,6 +38,7 @@ const NEWS: NewsItem[] = [
     description: "A oferta aparece na central oficial do LATAM Pass com validade até 13/09/2026. Há também campanhas com Marriott Bonvoy e Shopee em andamento.",
     detail: "Consulte a central oficial para regras, prazos e condições de cada parceiro.",
     href: "https://latampass.latam.com/pt_br/ofertas",
+    expiresAt: "2026-09-13T23:59:59-03:00",
   },
   {
     program: "TAP Miles&Go",
@@ -47,15 +50,34 @@ const NEWS: NewsItem[] = [
   },
 ];
 
+function isActive(item: NewsItem, now: number) {
+  if (!item.expiresAt) return true;
+  const expiry = Date.parse(item.expiresAt);
+  return Number.isNaN(expiry) || now <= expiry;
+}
+
 export function MilesNewsCarousel() {
   const [index, setIndex] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const news = useMemo(() => NEWS.filter((item) => isActive(item, now)), [now]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setIndex((current) => (current + 1) % NEWS.length), 6500);
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const item = NEWS[index];
+  useEffect(() => {
+    if (index >= news.length) setIndex(0);
+  }, [index, news.length]);
+
+  useEffect(() => {
+    if (news.length <= 1) return;
+    const timer = window.setInterval(() => setIndex((current) => (current + 1) % news.length), 6500);
+    return () => window.clearInterval(timer);
+  }, [news.length]);
+
+  if (news.length === 0) return null;
+  const item = news[index] ?? news[0];
 
   return (
     <section className={styles.newsWrap} aria-label="Radar de notícias de milhas">
@@ -69,14 +91,14 @@ export function MilesNewsCarousel() {
         </div>
         <div className={styles.newsSide}>
           <span className={styles.newsLabel}>RADAR TRIPNORDESTINOS</span>
-          <strong>{String(index + 1).padStart(2, "0")} / {String(NEWS.length).padStart(2, "0")}</strong>
+          <strong>{String(index + 1).padStart(2, "0")} / {String(news.length).padStart(2, "0")}</strong>
           <p>Promoções, parcerias e novidades que podem mudar o valor das suas milhas.</p>
         </div>
       </div>
       <div className={styles.newsControls}>
-        <button type="button" onClick={() => setIndex((index - 1 + NEWS.length) % NEWS.length)} aria-label="Notícia anterior">←</button>
-        <div>{NEWS.map((news, position) => <button type="button" key={news.title} onClick={() => setIndex(position)} className={position === index ? styles.newsDotActive : styles.newsDot} aria-label={`Ver notícia ${position + 1}`} />)}</div>
-        <button type="button" onClick={() => setIndex((index + 1) % NEWS.length)} aria-label="Próxima notícia">→</button>
+        <button type="button" onClick={() => setIndex((index - 1 + news.length) % news.length)} aria-label="Notícia anterior">←</button>
+        <div>{news.map((newsItem, position) => <button type="button" key={newsItem.title} onClick={() => setIndex(position)} className={position === index ? styles.newsDotActive : styles.newsDot} aria-label={`Ver notícia ${position + 1}`} />)}</div>
+        <button type="button" onClick={() => setIndex((index + 1) % news.length)} aria-label="Próxima notícia">→</button>
       </div>
     </section>
   );
