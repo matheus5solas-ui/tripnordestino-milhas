@@ -6,7 +6,7 @@ import { MILES_CAMPAIGNS } from "@/data/miles-campaigns";
 
 const NEWS = MILES_CAMPAIGNS.filter((campaign) => campaign.featured);
 
-function isActive(item: NewsItem, now: number) {
+function isActive(item: (typeof NEWS)[number], now: number) {
   if (!item.expiresAt) return true;
   const expiry = Date.parse(item.expiresAt);
   return Number.isNaN(expiry) || now <= expiry;
