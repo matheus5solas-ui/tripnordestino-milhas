@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MilesNewsCarousel } from "@/components/MilesNewsCarousel";
 import styles from "./milhas.module.css";
+import { activeMilesCampaigns } from "@/data/miles-campaigns";
 
 const programs = [
   { name: "LATAM Pass", status: "Ofertas ativas", latest: "Aniversário LATAM Pass", latestDetail: "Central oficial mantém a campanha de aniversário até 10/10/2026, além de Marriott Bonvoy e Shopee. A campanha bancária de 25% encerrou em 18/09.", cost: "Depende da oferta selecionada", note: "Consulte as condições da oferta oficial antes de acumular, transferir ou resgatar milhas." },
@@ -12,32 +13,6 @@ const programs = [
   { name: "TAP Miles&Go", status: "Ofertas do programa ativas", latest: "Cash&Miles e ofertas de acúmulo", latestDetail: "A TAP mantém ofertas e opções de compra/acúmulo, sem bônus de transferência público equivalente confirmado agora.", cost: "Aguardando promoção específica de compra", note: "O custo será calculado quando houver preço promocional de compra de milhas disponível." },
 ];
 
-type Campaign = {
-  program: string;
-  title: string;
-  period: string;
-  status: string;
-  description: string;
-  href: string;
-  expiresAt?: string;
-};
-
-const campaigns: Campaign[] = [
-  { program: "LATAM Pass", title: "Aniversário LATAM Pass: ofertas para acumular e resgatar milhas", period: "Até 10/10/2026", status: "Ativa", description: "Campanha de aniversário destacada na central oficial do LATAM Pass, com ofertas para acumular e resgatar milhas.", href: "https://latampass.latam.com/pt_br/ofertas", expiresAt: "2026-10-10T23:59:59-03:00" },
-  { program: "Iberia Club", title: "Até 20% de desconto em resgates com Avios", period: "Até 23/09/2026", status: "Ativa", description: "Desconto em resgates de voos selecionados operados pela Iberia, incluindo rotas com origem ou destino no Brasil.", href: "https://www.iberia.com/us/iberia-club/use-avios/", expiresAt: "2026-09-23T23:59:59-03:00" },
-  { program: "Azul Fidelidade", title: "Até 110% de bônus + 2.000 pontos na primeira transferência", period: "11 a 13/09/2026", status: "Ativa", description: "Semana do Cliente: campanha de transferência de pontos de parceiros bancários para o Azul Fidelidade. Consulte elegibilidade e faça o cadastro antes de transferir.", href: "https://www.voeazul.com.br/br/pt/home", expiresAt: "2026-09-13T23:59:59-03:00" },
-  { program: "Smiles", title: "Até 300% de bônus na compra de milhas", period: "Até 21h de 11/09/2026", status: "Ativa", description: "250% no Clube 1.000 e bônus progressivo até 300% para Clube 20.000 e/ou categoria Magno/Diamante.", href: "https://www.smiles.com.br/campanhas/comprademilhas-300-20260902", expiresAt: "2026-09-11T21:00:00-03:00" },
-  { program: "LATAM Pass", title: "RevPoints → Milhas LATAM Pass", period: "Até 13/09/2026", status: "Ativa", description: "Campanha listada na central oficial de ofertas LATAM Pass.", href: "https://latampass.latam.com/pt_br/ofertas", expiresAt: "2026-09-13T23:59:59-03:00" },
-  { program: "LATAM Pass", title: "Marriott Bonvoy + LATAM Pass", period: "Até 15/11/2026", status: "Ativa", description: "Cadastro no Marriott Bonvoy com oferta de 700 milhas LATAM Pass.", href: "https://latampass.latam.com/pt_br/ofertas", expiresAt: "2026-11-15T23:59:59-03:00" },
-  { program: "LATAM Pass", title: "Coleção LATAM Pass / Shopee", period: "Até 30/09/2026", status: "Ativa", description: "Acúmulo de milhas em compras elegíveis através da coleção LATAM Pass.", href: "https://latampass.latam.com/pt_br/ofertas", expiresAt: "2026-09-30T23:59:59-03:00" },
-  { program: "TAP Miles&Go", title: "Cash&Miles", period: "Disponível atualmente", status: "Ativa", description: "Permite combinar milhas e dinheiro na reserva de voos elegíveis da TAP.", href: "https://www.flytap.com/pt-br/miles-and-go/promocoes" },
-];
-
-function activeCampaigns() {
-  const now = Date.now();
-  return campaigns.filter((campaign) => !campaign.expiresAt || now <= Date.parse(campaign.expiresAt));
-}
-
 function updatedLabel() {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Fortaleza" }).format(new Date());
 }
@@ -45,7 +20,7 @@ function updatedLabel() {
 export const dynamic = "force-dynamic";
 
 export default function MilesPage() {
-  const visibleCampaigns = activeCampaigns();
+  const visibleCampaigns = activeMilesCampaigns();
 
   return (
     <main>
