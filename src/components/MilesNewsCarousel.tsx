@@ -2,71 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "@/app/milhas/milhas.module.css";
+import { MILES_CAMPAIGNS } from "@/data/miles-campaigns";
 
-type NewsItem = {
-  program: string;
-  eyebrow: string;
-  title: string;
-  description: string;
-  detail: string;
-  href: string;
-  expiresAt?: string;
-};
-
-const NEWS: NewsItem[] = [
-  {
-    program: "LATAM Pass",
-    eyebrow: "ANIVERSÁRIO LATAM PASS",
-    title: "Ofertas para acumular e resgatar milhas até 10/10",
-    description: "A central oficial do LATAM Pass mantém a campanha de aniversário com oportunidades de acúmulo e resgate.",
-    detail: "Consulte a central oficial para ver quais ofertas estão vigentes e as condições de cada parceiro.",
-    href: "https://latampass.latam.com/pt_br/ofertas",
-    expiresAt: "2026-10-10T23:59:59-03:00",
-  },
-  {
-    program: "Iberia Club",
-    eyebrow: "AVIOS EM DESTAQUE",
-    title: "Iberia: até 20% de desconto em resgates com Avios",
-    description: "A campanha vale até 23/09 para voos selecionados, com descontos que também alcançam rotas do Brasil.",
-    detail: "Confira as rotas, cabines, datas de viagem e disponibilidade diretamente na Iberia antes do resgate.",
-    href: "https://www.iberia.com/us/iberia-club/use-avios/",
-    expiresAt: "2026-09-23T23:59:59-03:00",
-  },
-  {
-    program: "Azul Fidelidade",
-    eyebrow: "PARCERIA EM DESTAQUE",
-    title: "Nomad + Azul: conversão pode render até 30 mil pontos",
-    description: "A Azul está destacando a parceria com a Nomad para clientes que adicionam saldo em reais e convertem para dólar ou euro pelo app.",
-    detail: "Oferta divulgada na página oficial Nomad + Azul. Confira as condições e elegibilidade antes de participar.",
-    href: "https://www.voeazul.com.br/br/pt/ofertas/nomad",
-  },
-  {
-    program: "Smiles",
-    eyebrow: "TERMINA HOJE",
-    title: "Smiles oferece até 300% de bônus na compra de milhas",
-    description: "A campanha de compra de milhas vai até 21h de 11/09/2026 e o percentual varia conforme Clube Smiles e categoria do participante.",
-    detail: "Promoção oficial Smiles. Verifique o preço do milheiro para a sua conta antes da compra.",
-    href: "https://www.smiles.com.br/campanhas/comprademilhas-300-20260902",
-    expiresAt: "2026-09-11T21:00:00-03:00",
-  },
-  {
-    program: "LATAM Pass",
-    eyebrow: "OPORTUNIDADE LATAM PASS",
-    title: "RevPoints podem ser convertidos em Milhas LATAM Pass",
-    description: "A oferta aparece na central oficial do LATAM Pass com validade até 13/09/2026. Há também campanhas com Marriott Bonvoy e Shopee em andamento.",
-    detail: "Consulte a central oficial para regras, prazos e condições de cada parceiro.",
-    href: "https://latampass.latam.com/pt_br/ofertas",
-    expiresAt: "2026-09-13T23:59:59-03:00",
-  },
-  {
-    program: "TAP Miles&Go",
-    eyebrow: "MILHAS INTERNACIONAIS",
-    title: "TAP mantém ofertas de passagens Miles&Go e novas opções de acúmulo",
-    description: "A TAP divulga oportunidades para reservar voos com milhas e campanhas de acúmulo com parceiros, incluindo estadias.",
-    detail: "Os valores em milhas e taxas variam conforme rota e data. Consulte a disponibilidade oficial.",
-    href: "https://www.flytap.com/pt-br/miles-and-go/promocoes",
-  },
-];
+const NEWS = MILES_CAMPAIGNS.filter((campaign) => campaign.featured);
 
 function isActive(item: NewsItem, now: number) {
   if (!item.expiresAt) return true;
