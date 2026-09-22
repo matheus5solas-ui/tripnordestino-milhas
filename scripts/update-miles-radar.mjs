@@ -11,6 +11,7 @@ const SOURCES = [
 ];
 
 const previousPath = new URL("../src/data/miles-radar.json", import.meta.url);
+const candidatesPath = new URL("../src/data/miles-candidates.json", import.meta.url);
 let previous = { sources: [] };
 try { previous = JSON.parse(await fs.readFile(previousPath, "utf8")); } catch {}
 
@@ -25,6 +26,33 @@ function textOnly(html) {
     .replace(/&quot;/gi, '"')
     .replace(/\\s+/g, " ")
     .trim();
+}
+
+function extractCandidates(source, text) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const keyword = /(b[oô]nus|milhas|avios|transfer|promo[cç][aã]o|oferta|desconto)/i;
+  const date = /(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}\s+de\s+[a-zç]+(?:\s+de\s+\d{4})?)/i;
+  const percent = /\b\d{1,3}%/;
+  const candidates = [];
+  for (const match of normalized.matchAll(/.{0,180}(?:b[oô]nus|milhas|avios|transfer[^ ]*|promo[cç][aã]o|oferta|desconto).{0,320}/gi)) {
+    const excerpt = match[0].trim();
+    if (!keyword.test(excerpt)) continue;
+    const hasDate = date.test(excerpt);
+    const hasBenefit = percent.test(excerpt) || /\b\d[\d.]*\s*(?:milhas|avios|pontos)\b/i.test(excerpt);
+    if (!hasDate || !hasBenefit) continue;
+    candidates.push({
+      sourceId: source.id,
+      program: source.name,
+      sourceUrl: source.url,
+      excerpt: excerpt.slice(0, 600),
+      detectedAt: checkedAt,
+      status: "candidate",
+      publishable: false,
+      reason: "Requer validação de regulamento, validade e elegibilidade antes da publicação."
+    });
+    if (candidates.length >= 12) break;
+  }
+  return candidates;
 }
 
 function signature(text) {
@@ -43,6 +71,7 @@ function signature(text) {
 
 const checkedAt = new Date().toISOString();
 const sources = [];
+const candidates = [];
 
 for (const source of SOURCES) {
   const old = previous.sources?.find((item) => item.id === source.id);
@@ -53,7 +82,9 @@ for (const source of SOURCES) {
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const html = await response.text();
-    const sig = signature(textOnly(html));
+    const plainText = textOnly(html);
+    const sig = signature(plainText);
+    candidates.push(...extractCandidates(source, plainText));
     sources.push({
       ...source,
       ok: true,
@@ -74,4 +105,5 @@ for (const source of SOURCES) {
 }
 
 await fs.writeFile(previousPath, JSON.stringify({ checkedAt, sources }, null, 2) + "\n");
-console.log(`Radar verificado em ${checkedAt}: ${sources.filter(s => s.ok).length}/${sources.length} fontes acessíveis.`);
+await fs.writeFile(candidatesPath, JSON.stringify({ checkedAt, candidates }, null, 2) + "\n");
+console.log(`Radar verificado em ${checkedAt}: ${sources.filter(s => s.ok).length}/${sources.length} fontes acessíveis; ${candidates.length} candidatos aguardando validação.`);
