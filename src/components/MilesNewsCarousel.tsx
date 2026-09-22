@@ -15,6 +15,33 @@ type NewsItem = {
 
 const NEWS: NewsItem[] = [
   {
+    program: "LATAM Pass",
+    eyebrow: "TRANSFERÊNCIA COM BÔNUS",
+    title: "Livelo → LATAM Pass: 25% de bônus até 22/09",
+    description: "A campanha oferece 25% de milhas bônus na transferência de pontos Livelo para o LATAM Pass e benefício adicional na primeira transferência, conforme regulamento.",
+    detail: "Cadastre-se na promoção antes de transferir e confira o mínimo e as demais condições.",
+    href: "https://web.latampass.latam.com/pt_br/promocao/livelo-campanhas",
+    expiresAt: "2026-09-22T23:59:59-03:00",
+  },
+  {
+    program: "Iberia Club",
+    eyebrow: "AVIOS EM DESTAQUE",
+    title: "Iberia: até 20% de desconto em resgates com Avios",
+    description: "A campanha vale até 23/09 para voos selecionados, com descontos que também alcançam rotas do Brasil.",
+    detail: "Confira as rotas, cabines, datas de viagem e disponibilidade diretamente na Iberia antes do resgate.",
+    href: "https://www.iberia.com/br/iberia-club/comprar-voos-avios/",
+    expiresAt: "2026-09-23T23:59:59-03:00",
+  },
+  {
+    program: "Iberia Club",
+    eyebrow: "TRANSFERÊNCIA ESFERA",
+    title: "Esfera → Iberia Club: até 25% de bônus em Avios",
+    description: "A promoção de transferência da Esfera para o Iberia Club está vigente até 22/09, com bônus de até 25% conforme as condições da campanha.",
+    detail: "Consulte elegibilidade, proporção e regulamento antes de transferir.",
+    href: "https://www.esfera.com.vc/termos-e-condicoes",
+    expiresAt: "2026-09-22T23:59:59-03:00",
+  },
+  {
     program: "Azul Fidelidade",
     eyebrow: "PARCERIA EM DESTAQUE",
     title: "Nomad + Azul: conversão pode render até 30 mil pontos",
