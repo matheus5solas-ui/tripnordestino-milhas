@@ -27,6 +27,6 @@ jobs:
           fi
           git config user.name "tripnordestinos-radar"
           git config user.email "actions@users.noreply.github.com"
-          git add src/data/miles-radar.json
+          git add src/data/miles-radar.json src/data/miles-candidates.json
           git commit -m "chore: atualiza radar diário de milhas"
           git push
