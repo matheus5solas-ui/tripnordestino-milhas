@@ -2,7 +2,11 @@ import fs from "node:fs/promises";
 
 const SOURCES = [
   { id: "latam", name: "LATAM Pass", url: "https://latampass.latam.com/pt_br/ofertas" },
-  { id: "iberia", name: "Iberia", url: "https://www.iberia.com/br/ofertas/voo/viajar/" },
+  { id: "smiles", name: "Smiles", url: "https://www.smiles.com.br/portal/campanhas" },
+  { id: "azul", name: "Azul Fidelidade", url: "https://passagens.voeazul.com.br/pt/buscador-de-pontos" },
+  { id: "livelo", name: "Livelo", url: "https://www.livelo.com.br/ganhe-pontos" },
+  { id: "esfera", name: "Esfera", url: "https://www.esfera.com.vc/transfira-pontos-esfera" },
+  { id: "iberia", name: "Iberia Club", url: "https://www.iberia.com/br/iberia-club/" },
   { id: "tap", name: "TAP Miles&Go", url: "https://www.flytap.com/pt-br/miles-and-go/promocoes" },
 ];
 
