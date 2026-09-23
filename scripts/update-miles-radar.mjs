@@ -6,6 +6,8 @@ const SOURCES = [
   { id: "azul", name: "Azul Fidelidade", url: "https://passagens.voeazul.com.br/pt/buscador-de-pontos" },
   { id: "livelo", name: "Livelo", url: "https://www.livelo.com.br/ganhe-pontos" },
   { id: "esfera", name: "Esfera", url: "https://www.esfera.com.vc/transfira-pontos-esfera" },
+  { id: "esfera-home", name: "Esfera", url: "https://www.esfera.com.vc/" },
+  { id: "esfera-terms", name: "Esfera", url: "https://www.esfera.com.vc/termos-e-condicoes" },
   { id: "iberia", name: "Iberia Club", url: "https://www.iberia.com/br/iberia-club/" },
   { id: "tap", name: "TAP Miles&Go", url: "https://www.flytap.com/pt-br/miles-and-go/promocoes" },
 ];
@@ -30,16 +32,17 @@ function textOnly(html) {
 
 function extractCandidates(source, text) {
   const normalized = text.replace(/\s+/g, " ").trim();
-  const keyword = /(b[oô]nus|milhas|avios|transfer|promo[cç][aã]o|oferta|desconto)/i;
+  const keyword = /(b[oô]nus|milhas|avios|transfer|promo[cç][aã]o|oferta|desconto|clube\s+esfera|iberia\s+club)/i;
   const date = /(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{1,2}\s+de\s+[a-zç]+(?:\s+de\s+\d{4})?)/i;
   const percent = /\b\d{1,3}%/;
   const candidates = [];
-  for (const match of normalized.matchAll(/.{0,180}(?:b[oô]nus|milhas|avios|transfer[^ ]*|promo[cç][aã]o|oferta|desconto).{0,320}/gi)) {
+  for (const match of normalized.matchAll(/.{0,260}(?:b[oô]nus|milhas|avios|transfer[^ ]*|promo[cç][aã]o|oferta|desconto|clube\s+esfera|iberia\s+club).{0,520}/gi)) {
     const excerpt = match[0].trim();
     if (!keyword.test(excerpt)) continue;
-    const hasDate = date.test(excerpt);
+    const hasDate = date.test(excerpt) || /(?:s[oó]\s+at[eé]|at[eé]|v[aá]lid[oa]s?).{0,80}\d{1,2}\/\d{1,2}/i.test(excerpt);
     const hasBenefit = percent.test(excerpt) || /\b\d[\d.]*\s*(?:milhas|avios|pontos)\b/i.test(excerpt);
-    if (!hasDate || !hasBenefit) continue;
+    const partnerTransfer = /(iberia|latam|smiles|azul|tap).{0,180}(?:b[oô]nus|avios|milhas|transfer)|(?:b[oô]nus|avios|milhas|transfer).{0,180}(iberia|latam|smiles|azul|tap)/i.test(excerpt);
+    if (!hasDate || !hasBenefit || !partnerTransfer) continue;
     candidates.push({
       sourceId: source.id,
       program: source.name,
