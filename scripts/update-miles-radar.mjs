@@ -4,6 +4,7 @@ const SOURCES = [
   { id: "latam", name: "LATAM Pass", url: "https://latampass.latam.com/pt_br/ofertas" },
   { id: "smiles", name: "Smiles", url: "https://www.smiles.com.br/portal/campanhas" },
   { id: "azul", name: "Azul Fidelidade", url: "https://passagens.voeazul.com.br/pt/buscador-de-pontos" },
+  { id: "azul-bancos", name: "Azul Fidelidade", url: "https://www.voeazul.com.br/br/pt/ofertas/bancos" },
   { id: "livelo", name: "Livelo", url: "https://www.livelo.com.br/ganhe-pontos" },
   { id: "esfera", name: "Esfera", url: "https://www.esfera.com.vc/transfira-pontos-esfera" },
   { id: "esfera-home", name: "Esfera", url: "https://www.esfera.com.vc/" },
